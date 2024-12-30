@@ -23,8 +23,8 @@
 
 static const uint32_t address = 0x407B38;
 
-static const std::vector<unsigned char>oldAddress = { 0x13, 0x13, 0x00, 0x00 };
-static const std::vector<unsigned char>newAddress = { 0x09, 0x5F, 0x00, 0x00 };
+static const std::vector<unsigned char> oldAddress = { 0x13, 0x13, 0x00, 0x00 };
+static const std::vector<unsigned char> newAddress = { 0x5F, 0x09, 0x00, 0x00 };
 
 static void Attach(const HMODULE hModule){
 	const uint64_t& base = (uint64_t)GetModuleHandle(NULL);
@@ -40,12 +40,12 @@ static void Attach(const HMODULE hModule){
 		return;
 	}
 
-	if (memcmp(pAddress, oldAddress.data(), sizeof(uint32_t)) != 0) {
-		MessageBox(NULL, L"NetworkChecksumDisabler isn't compatible with this game version!", L"NetworkChecksumDisabler - Error", MB_OK | MB_ICONERROR);
-		exitCode = 1;
-	} else {
+	//if (memcmp(pAddress, oldAddress.data(), sizeof(uint32_t)) != 0) {
+	//	MessageBox(NULL, L"NetworkChecksumDisabler isn't compatible with this game version!", L"NetworkChecksumDisabler - Error", MB_OK | MB_ICONERROR);
+	//	exitCode = 1;
+	//} else {
 		memcpy(pAddress, newAddress.data(), sizeof(uint32_t));
-	}
+	//}
 	
 	if (!VirtualProtect(pAddress, sizeof(uint32_t), oldProtect, &oldProtect)) {
 		MessageBox(NULL, L"NetworkChecksumDisabler couldn't revert protections with the game's memory!", L"NetworkChecksumDisabler - Error", MB_OK | MB_ICONERROR);
