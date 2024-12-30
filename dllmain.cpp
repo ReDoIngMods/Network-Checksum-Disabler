@@ -40,12 +40,12 @@ static void Attach(const HMODULE hModule){
 		return;
 	}
 
-	//if (memcmp(pAddress, oldAddress.data(), sizeof(uint32_t)) != 0) {
-	//	MessageBox(NULL, L"NetworkChecksumDisabler isn't compatible with this game version!", L"NetworkChecksumDisabler - Error", MB_OK | MB_ICONERROR);
-	//	exitCode = 1;
-	//} else {
+	if (memcmp(pAddress, oldAddress.data(), sizeof(uint32_t)) != 0) {
+		MessageBox(NULL, L"NetworkChecksumDisabler isn't compatible with this game version!", L"NetworkChecksumDisabler - Error", MB_OK | MB_ICONERROR);
+		exitCode = 1;
+	} else {
 		memcpy(pAddress, newAddress.data(), sizeof(uint32_t));
-	//}
+	}
 	
 	if (!VirtualProtect(pAddress, sizeof(uint32_t), oldProtect, &oldProtect)) {
 		MessageBox(NULL, L"NetworkChecksumDisabler couldn't revert protections with the game's memory!", L"NetworkChecksumDisabler - Error", MB_OK | MB_ICONERROR);
