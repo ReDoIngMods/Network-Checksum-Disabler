@@ -19,40 +19,32 @@
 
 #include <cstdint>
 #include <Windows.h>
-#include <vector>
+#include <array>
 
-static const uint32_t address = 0x407B38;
+constexpr uint32_t address = 0x407B38;
 
-static const std::vector<unsigned char> oldAddress = { 0x13, 0x13, 0x00, 0x00 };
-static const std::vector<unsigned char> newAddress = { 0x5F, 0x09, 0x00, 0x00 };
+// Make sure the sizes for oldBytes and newBytes match!
+constexpr std::array<unsigned char, 4> oldBytes = { 0x13, 0x13, 0x00, 0x00 };
+constexpr std::array<unsigned char, 4> newBytes = { 0x5F, 0x09, 0x00, 0x00 };
 
-static void Attach(const HMODULE hModule){
-	const uint64_t& base = (uint64_t)GetModuleHandle(NULL);
-	LPVOID pAddress = reinterpret_cast<LPVOID>(base + address + 0x2);
+static void Attach(const HMODULE hModule) {
+	uint64_t baseAddress = (uint64_t)GetModuleHandle(NULL);
+	LPVOID addressPtr = reinterpret_cast<LPVOID>(baseAddress + address + 0x2);
 
 	DWORD oldProtect = 0;
-	DWORD exitCode = 0;
-
-	if (!VirtualProtect(pAddress, sizeof(uint32_t), PAGE_EXECUTE_READWRITE, &oldProtect)) {
+	if (!VirtualProtect(addressPtr, oldBytes.size(), PAGE_EXECUTE_READWRITE, &oldProtect)) {
 		MessageBox(NULL, L"NetworkChecksumDisabler couldn't update protections with the game's memory!", L"NetworkChecksumDisabler - Error", MB_OK | MB_ICONERROR);
 		
-		FreeLibraryAndExitThread(hModule, 1);
+		FreeLibraryAndExitThread(hModule, 1); // If it fails here, then we can just uninject since the memory didnt even change from this dll.
 		return;
 	}
 
-	if (memcmp(pAddress, oldAddress.data(), sizeof(uint32_t)) != 0) {
+	if (memcmp(addressPtr, oldBytes.data(), oldBytes.size()) != 0)
 		MessageBox(NULL, L"NetworkChecksumDisabler isn't compatible with this game version!", L"NetworkChecksumDisabler - Error", MB_OK | MB_ICONERROR);
-		exitCode = 1;
-	} else {
-		memcpy(pAddress, newAddress.data(), sizeof(uint32_t));
-	}
+	else
+		memcpy(addressPtr, newBytes.data(), oldBytes.size());
 	
-	if (!VirtualProtect(pAddress, sizeof(uint32_t), oldProtect, &oldProtect)) {
-		MessageBox(NULL, L"NetworkChecksumDisabler couldn't revert protections with the game's memory!", L"NetworkChecksumDisabler - Error", MB_OK | MB_ICONERROR);
-		exitCode = 1;
-	}
-	
-	FreeLibraryAndExitThread(hModule, exitCode);
+	VirtualProtect(addressPtr, oldBytes.size(), oldProtect, &oldProtect); // Wouldn't make sense for this to error if the protection change above this worked.
 }
 
 BOOL APIENTRY DllMain(HMODULE hModule, DWORD reason, LPVOID lpReserved) {
