@@ -1,0 +1,12 @@
+{
+  "$schema": "https://raw.githubusercontent.com/ScrappySM/CarbonLauncher/refs/heads/main/schema.json",
+
+  "name": "Network Checksum Disabler",
+  "url": "https://github.com/ReDoIngMods/Network-Checksum-Disabler",
+
+  "authors": [
+    "crackx02"
+  ],
+
+  "description": "Disables the multiplayer game files checksum in Scrap Mechanic"
+}
