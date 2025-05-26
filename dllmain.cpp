@@ -21,30 +21,49 @@
 #include <Windows.h>
 #include <array>
 
-constexpr uint32_t address = 0x407B38;
+// Address of where the client disconnects if the server sends a "checksums denied" packet
+constexpr uint32_t addressClient = 0x0407B3A;
+
+// Address of where the server sends the "checksums denied" packet
+constexpr uint32_t addressServer = 0x08cf3b5;
 
 // Make sure the sizes for oldBytes and newBytes match!
-constexpr std::array<unsigned char, 4> oldBytes = { 0x13, 0x13, 0x00, 0x00 };
-constexpr std::array<unsigned char, 4> newBytes = { 0x5F, 0x09, 0x00, 0x00 };
+constexpr std::array<unsigned char, 4> oldBytesClient = { 0x13, 0x13, 0x00, 0x00 };
+constexpr std::array<unsigned char, 4> newBytesClient = { 0x5F, 0x09, 0x00, 0x00 };
+
+// Packet ID 0x8 = denied, 0x7 = accepted
+constexpr unsigned char oldByteServer = 0x8;
+constexpr unsigned char newByteServer = 0x7;
 
 static void Attach(const HMODULE hModule) {
 	uint64_t baseAddress = (uint64_t)GetModuleHandle(NULL);
-	LPVOID addressPtr = reinterpret_cast<LPVOID>(baseAddress + address + 0x2);
+	LPVOID addressPtrClient = reinterpret_cast<LPVOID>(baseAddress + addressClient);
+	LPVOID addressPtrServer = reinterpret_cast<LPVOID>(baseAddress + addressServer);
 
-	DWORD oldProtect = 0;
-	if (!VirtualProtect(addressPtr, oldBytes.size(), PAGE_EXECUTE_READWRITE, &oldProtect)) {
+	DWORD oldProtectClient = 0;
+	DWORD oldProtectServer = 0;
+	if (
+		!VirtualProtect(addressPtrClient, newBytesClient.size(), PAGE_EXECUTE_READWRITE, &oldProtectClient) ||
+		!VirtualProtect(addressPtrServer, sizeof(newByteServer), PAGE_EXECUTE_READWRITE, &oldProtectServer)
+		) {
 		MessageBox(NULL, L"NetworkChecksumDisabler couldn't update protections with the game's memory!", L"NetworkChecksumDisabler - Error", MB_OK | MB_ICONERROR);
 		
 		FreeLibraryAndExitThread(hModule, 1); // If it fails here, then we can just uninject since the memory didnt even change from this dll.
 		return;
 	}
 
-	if (memcmp(addressPtr, oldBytes.data(), oldBytes.size()) != 0)
+	if (
+		(memcmp(addressPtrClient, oldBytesClient.data(), oldBytesClient.size()) != 0) ||
+		(memcmp(addressPtrServer, &oldByteServer, sizeof(oldByteServer)) != 0)
+		)
 		MessageBox(NULL, L"NetworkChecksumDisabler isn't compatible with this game version!", L"NetworkChecksumDisabler - Error", MB_OK | MB_ICONERROR);
-	else
-		memcpy(addressPtr, newBytes.data(), oldBytes.size());
-	
-	VirtualProtect(addressPtr, oldBytes.size(), oldProtect, &oldProtect); // Wouldn't make sense for this to error if the protection change above this worked.
+	else {
+		memcpy(addressPtrClient, newBytesClient.data(), newBytesClient.size());
+		memcpy(addressPtrServer, &newByteServer, sizeof(newByteServer));
+	}
+
+	VirtualProtect(addressPtrClient, newBytesClient.size(), oldProtectClient, &oldProtectClient); // Wouldn't make sense for this to error if the protection change above this worked.
+	VirtualProtect(addressPtrServer, sizeof(newByteServer), oldProtectServer, &oldProtectServer);
 }
 
 BOOL APIENTRY DllMain(HMODULE hModule, DWORD reason, LPVOID lpReserved) {
