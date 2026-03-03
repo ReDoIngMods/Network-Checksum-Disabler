@@ -25,7 +25,7 @@
 constexpr uint32_t addressClient = 0x0407B3A;
 
 // Address of where the server sends the "checksums denied" packet
-constexpr uint32_t addressServer = 0x08cf3b5;
+constexpr uint32_t addressServer = 0x08cf395;
 
 // Make sure the sizes for oldBytes and newBytes match!
 constexpr std::array<unsigned char, 4> oldBytesClient = { 0x13, 0x13, 0x00, 0x00 };
