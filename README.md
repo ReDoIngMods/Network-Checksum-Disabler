@@ -7,7 +7,7 @@ If used on the server, any client with mismatching checksums can join, even if t
 
 Currently supported game versions:
 
-- 0.7.3 Build 776
+- 0.7.4 Build 778
 
 To use, inject the DLL with any DLL injector of your choice.
 
